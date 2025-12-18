@@ -464,6 +464,7 @@ def compute_losses(
 
 @torch.no_grad()
 def evaluate_bc(model: nn.Module, loader: DataLoader, device: str = "cpu") -> Dict[str, float]:
+    model = model.to(device)
     model.eval()
     totals = {"loss_total": 0.0, "loss_eos": 0.0, "loss_ici": 0.0}
     n = 0
@@ -476,15 +477,16 @@ def evaluate_bc(model: nn.Module, loader: DataLoader, device: str = "cpu") -> Di
             next_is_eos, next_ici_feat, loss_mask_eos, loss_mask_ici
         ) = batch
 
-        whale_ids = whale_ids.to(device)
-        ici_feats = ici_feats.to(device)
-        tok_types = tok_types.to(device)
-        attn_mask = attn_mask.to(device)
+        whale_ids   = whale_ids.to(device, non_blocking=True)
+        ici_feats   = ici_feats.to(device, non_blocking=True)
+        tok_types   = tok_types.to(device, non_blocking=True)
+        attn_mask   = attn_mask.to(device, non_blocking=True)
 
-        next_is_eos = next_is_eos.to(device)
-        next_ici_feat = next_ici_feat.to(device)
-        loss_mask_eos = loss_mask_eos.to(device)
-        loss_mask_ici = loss_mask_ici.to(device)
+        # and labels too if used in losses:
+        next_is_eos   = next_is_eos.to(device, non_blocking=True)
+        next_ici_feat = next_ici_feat.to(device, non_blocking=True)
+        loss_mask_eos = loss_mask_eos.to(device, non_blocking=True)
+        loss_mask_ici = loss_mask_ici.to(device, non_blocking=True)
 
         eos_logits, ici_pred = model(whale_ids, ici_feats, tok_types, attn_mask)
         total, stats = compute_losses(
